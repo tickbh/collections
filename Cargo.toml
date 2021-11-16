@@ -1,0 +1,17 @@
+[package]
+name = "datastruct"
+version = "0.1.0"
+edition = "2018"
+authors = ["tickbh <tickdream125@hotmail.com>"]
+description = "the datastruct for Rust"
+license = "Apache-2.0/MIT"
+documentation = "https://docs.rs/datastruct"
+repository = "https://github.com/tickbh/datastruct"
+readme = "README.md"
+keywords = ["HashMap", "RBTree", "rbtree"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+
+[dependencies]
