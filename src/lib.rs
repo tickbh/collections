@@ -1,3 +1,5 @@
-pub mod rbtree;
+mod avltree;
+mod rbtree;
 
-pub use rbtree::*;
+pub use avltree::AVLTree;
+pub use rbtree::RBTree;
