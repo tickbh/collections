@@ -16,44 +16,44 @@ fn test1() {
 }
 
 
-fn test2() {
-    let mut avl = AVLTree::new();
-    print!("ok");
-    avl.insert(12, 2);
-    avl.insert(6, 1);
-    avl.insert(14, 1);
-    avl.insert(2, 1);
-    avl.insert(8, 1);
-    avl.insert(7, 1);
-    avl.print_tree();
-}
+// fn test2() {
+//     let mut avl = AVLTree::new();
+//     print!("ok");
+//     avl.insert(12, 2);
+//     avl.insert(6, 1);
+//     avl.insert(14, 1);
+//     avl.insert(2, 1);
+//     avl.insert(8, 1);
+//     avl.insert(7, 1);
+//     avl.print_tree();
+// }
 
-fn test3() {
-    let mut avl = AVLTree::new();
-    print!("ok");
-    avl.insert(4, 1);
-    avl.insert(2, 1);
-    avl.insert(10, 1);
-    avl.insert(6, 1);
-    avl.insert(12, 1);
-    avl.insert(7, 1);
-    avl.remove(&10);
-    avl.print_tree();
-}
+// fn test3() {
+//     let mut avl = AVLTree::new();
+//     print!("ok");
+//     avl.insert(4, 1);
+//     avl.insert(2, 1);
+//     avl.insert(10, 1);
+//     avl.insert(6, 1);
+//     avl.insert(12, 1);
+//     avl.insert(7, 1);
+//     avl.remove(&10);
+//     avl.print_tree();
+// }
 
 
-fn test4() {
-    let mut avl = AVLTree::new();
-    print!("ok");
-    avl.insert(4, 1);
-    avl.insert(2, 1);
-    avl.insert(10, 1);
-    avl.insert(6, 1);
-    avl.insert(12, 1);
-    avl.insert(11, 1);
-    avl.remove(&10);
-    avl.print_tree();
-}
+// fn test4() {
+//     let mut avl = AVLTree::new();
+//     print!("ok");
+//     avl.insert(4, 1);
+//     avl.insert(2, 1);
+//     avl.insert(10, 1);
+//     avl.insert(6, 1);
+//     avl.insert(12, 1);
+//     avl.insert(11, 1);
+//     avl.remove(&10);
+//     avl.print_tree();
+// }
 
 fn test_lots_of_insertions() {
     let mut m = AVLTree::new();
@@ -83,11 +83,13 @@ fn test_lots_of_insertions() {
 
         // remove forwards
         for i in 1..101 {
-            if i == 5 {
+            if i == 99 {
                 println!("ok");
             }
             assert!(m.remove(&i) == Some(i));
             println!("i============{}",i);
+
+        
 
             for j in 1..i + 1 {
                 assert!(!m.contains_key(&j));
@@ -121,14 +123,23 @@ fn test_lots_of_insertions() {
         }
     }
 }
+
+
 fn main() {
-    // test1();
+    test1();
     // test2();
     // test3();
     // test4();
     test_lots_of_insertions();
+    print!("ok");
+
+    
     // let mut avl = AVLTree::new();
-    // print!("ok");
+    // avl.insert(1, 1);
+    // avl.insert(2, 2);
+    // avl.insert(4, 4);
+    // avl.print_tree();
+    
     // avl.insert(1, 2);
     // avl.insert(3, 1);
     // avl.insert(5, 1);

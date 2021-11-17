@@ -11,7 +11,7 @@ pub struct AVLTreeNode<K: Ord, V> {
     pub parent: NodePtr<K, V>,
     pub key: K,
     pub value: V,
-    pub bf: i8,
+    pub height: i32,
 }
 
 impl<K, V> Debug for AVLTreeNode<K, V>
@@ -20,7 +20,7 @@ where
     V: Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "k:{:?} v:{:?}, bf:{:?}", self.key, self.value, self.bf)
+        write!(f, "k:{:?} v:{:?}, h:{:?}", self.key, self.value, self.height)
     }
 }
 
@@ -46,7 +46,8 @@ impl<K: Ord + Clone, V: Clone> NodePtr<K, V> {
     pub fn deep_clone(&self) -> NodePtr<K, V> {
         unsafe {
             let mut node = NodePtr::new((*self.0).key.clone(), (*self.0).value.clone());
-            node.set_bf(self.bf());
+            
+            unsafe { (*self.0).height = node.height();}
             if !self.left().is_null() {
                 node.set_left(self.left().deep_clone());
                 node.left().set_parent(node);
@@ -91,7 +92,7 @@ impl<K: Ord, V> NodePtr<K, V> {
             parent: NodePtr::null(),
             key: k,
             value: v,
-            bf: 0,
+            height: 1,
         };
         NodePtr(Box::into_raw(Box::new(node)))
     }
@@ -187,7 +188,12 @@ impl<K: Ord, V> NodePtr<K, V> {
         if self.is_null() {
             return;
         }
-        unsafe { (*self.0).left = left;  }
+        unsafe { 
+            (*self.0).left = left; 
+            if !left.is_null() {
+                (*left.0).parent = self.clone(); 
+            }
+        }
     }
 
     #[inline]
@@ -195,7 +201,12 @@ impl<K: Ord, V> NodePtr<K, V> {
         if self.is_null() {
             return;
         }
-        unsafe { (*self.0).right = right;  }
+        unsafe { 
+            (*self.0).right = right;
+            if !right.is_null() {
+                (*right.0).parent = self.clone();
+            }
+        }
     }
 
     #[inline]
@@ -222,6 +233,26 @@ impl<K: Ord, V> NodePtr<K, V> {
         unsafe { (*self.0).right.clone() }
     }
 
+    pub fn height(&self) -> i32 {
+        if self.is_null() {
+            return 0;
+        }
+        unsafe { (*self.0).height }
+    }
+
+    pub fn set_height(&self, height: i32) {
+        if self.is_null() {
+            return;
+        }
+        unsafe { (*self.0).height = height }
+    }
+
+    pub fn update_height(&mut self) {
+        unsafe {
+            (*self.0).height = 1 + std::cmp::max(self.left().height(), self.right().height());    
+        }
+    }
+
     #[inline]
     pub fn null() -> NodePtr<K, V> {
         NodePtr(ptr::null_mut())
@@ -232,23 +263,29 @@ impl<K: Ord, V> NodePtr<K, V> {
         self.0.is_null()
     }
 
-    #[inline]
-    pub fn bf_mut(&self) -> &mut i8 {
-        unsafe { &mut (*self.0).bf }
-    }
-
-    #[inline]
-    pub fn set_bf(&self, bf: i8) {
-        unsafe {  (*self.0).bf   = bf; }
-    }
-    
-    #[inline]
-    pub fn add_bf(&self, bf: i8) -> i8 {
-        unsafe {  (*self.0).bf += bf; (*self.0).bf }
-    }
-
-    #[inline]
     pub fn bf(&self) -> i8 {
-        unsafe { (*self.0).bf }
+        let (left, right) = (self.left().height(), self.right().height());
+        (right - left) as i8
     }
+
+    // #[inline]
+    // pub fn bf_mut(&self) -> &mut i8 {
+    //     let (left, right) = (self.left().height(), self.right().height());
+    //     return left - right;
+    // }
+
+    // #[inline]
+    // pub fn set_bf(&self, bf: i8) {
+    //     unsafe {  (*self.0).height   = bf; }
+    // }
+    
+    // #[inline]
+    // pub fn add_bf(&self, bf: i8) -> i8 {
+    //     unsafe {  (*self.0).height += bf; (*self.0).height }
+    // }
+
+    // #[inline]
+    // pub fn bf(&self) -> i8 {
+    //     unsafe { (*self.0).height }
+    // }
 }

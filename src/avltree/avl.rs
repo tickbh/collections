@@ -185,11 +185,7 @@ impl<K: Ord, V> AVLTree<K, V> {
         let mut parent = node.parent();
         let step = if is_add {1} else {-1};
         while !parent.is_null() {
-            if node == parent.left() {
-                *parent.bf_mut() -= step;
-            } else {
-                *parent.bf_mut() += step;
-            }
+            parent.update_height();
 
             if parent.bf() == 0 {
                 break;
@@ -223,28 +219,26 @@ impl<K: Ord, V> AVLTree<K, V> {
         let mut fix_parent;
         let mut is_left;
 
+        let is_root = node == self.root;
+
         if !node.left().is_null() && !node.right().is_null() {
             let mut replace = node.right().min_node();
             fix_parent = replace.parent();
             is_left = replace.is_left_child();
-            if node == self.root  {
+            if is_root  {
                 replace.set_left(self.root.left());
                 replace.set_right(self.root.right());
-                self.root.left().set_parent(replace);
-                self.root.right().set_parent(replace);
                 self.root = replace;
             } else {
                 if node.is_left_child() {
                     node.parent().set_left(replace);
                     replace.set_right(node.right());
-                    node.right().set_parent(replace);
                 } else {
                     node.parent().set_right(replace);
                     replace.set_left(node.left());
-                    node.left().set_parent(replace);
                 }
             }
-            replace.set_bf(node.bf());
+            replace.set_height(node.height());
             replace.set_parent(node.parent());
             if is_left {
                 fix_parent.set_left(NodePtr::null());
@@ -259,8 +253,11 @@ impl<K: Ord, V> AVLTree<K, V> {
                 node.parent().set_right(node.left());
             }
             fix_parent = node.left();
-            fix_parent.set_bf(node.bf());
+            fix_parent.set_height(node.height());
             is_left = true;
+            if is_root {
+                self.root = fix_parent;
+            }
         } else if !node.right().is_null() {
             node.right().set_parent(node.parent());
             if node.is_left_child() {
@@ -269,8 +266,11 @@ impl<K: Ord, V> AVLTree<K, V> {
                 node.parent().set_right(node.right());
             }
             fix_parent = node.right();
-            fix_parent.set_bf(node.bf());
+            fix_parent.set_height(node.height());
             is_left = false;
+            if is_root {
+                self.root = fix_parent;
+            }
         } else {
             is_left = node.is_left_child();
             fix_parent = node.parent();
@@ -279,14 +279,13 @@ impl<K: Ord, V> AVLTree<K, V> {
             } else {
                 fix_parent.set_right(NodePtr::null());
             }
+            if is_root {
+                self.root = NodePtr::null();
+            }
         }
 
         while !fix_parent.is_null() {
-            if is_left {
-                fix_parent.add_bf(1);
-            } else {
-                fix_parent.add_bf(-1);
-            }
+            fix_parent.update_height();
 
             if fix_parent.bf() == 0 {
                 is_left = fix_parent.is_left_child();
@@ -464,21 +463,19 @@ impl<K: Ord, V> AVLTree<K, V> {
         if !temp.left().is_null() {
             temp.left().set_parent(node.clone());
         }
+        node.update_height();
 
-        temp.set_parent(node.parent());
         if node == self.root {
             self.root = temp.clone();
-        } else if node == node.parent().left() {
+            temp.set_parent(NodePtr::null());
+        } else if node.is_left_child() {
             node.parent().set_left(temp.clone());
         } else {
             node.parent().set_right(temp.clone());
         }
 
         temp.set_left(node.clone());
-        node.set_parent(temp.clone());
-
-        *temp.bf_mut() = 0;
-        *node.bf_mut() = 0;
+        temp.update_height();
     }
 
     /*
@@ -501,11 +498,12 @@ impl<K: Ord, V> AVLTree<K, V> {
 
         if !temp.right().is_null() {
             temp.right().set_parent(node.clone());
+            node.update_height();
         }
 
-        temp.set_parent(node.parent());
         if node == self.root {
             self.root = temp.clone();
+            temp.set_parent(node.parent());
         } else if node == node.parent().right() {
             node.parent().set_right(temp.clone());
         } else {
@@ -513,10 +511,7 @@ impl<K: Ord, V> AVLTree<K, V> {
         }
 
         temp.set_right(node.clone());
-        node.set_parent(temp.clone());
-
-        *temp.bf_mut() = 0;
-        *node.bf_mut() = 0;
+        temp.update_height();
     }
 
     
@@ -528,21 +523,21 @@ impl<K: Ord, V> AVLTree<K, V> {
         self.left_rotate(node.left());
         self.right_rotate(node);
 
-        if bf == 0 {
-            left_node.set_bf(0);
-            lr_node.set_bf(0);
-            node.set_bf(0);
-        } else if bf == 1 {
-            left_node.set_bf(0);
-            lr_node.set_bf(-1);
-            node.set_bf(0);
-        } else if bf == -1 {
-            left_node.set_bf(0);
-            lr_node.set_bf(0);
-            node.set_bf(1);
-        } else {
-            panic!("un reached");
-        }
+        // if bf == 0 {
+        //     left_node.set_bf(0);
+        //     lr_node.set_bf(0);
+        //     node.set_bf(0);
+        // } else if bf == 1 {
+        //     left_node.set_bf(0);
+        //     lr_node.set_bf(-1);
+        //     node.set_bf(0);
+        // } else if bf == -1 {
+        //     left_node.set_bf(0);
+        //     lr_node.set_bf(0);
+        //     node.set_bf(1);
+        // } else {
+        //     panic!("un reached");
+        // }
     }
 
     
@@ -554,21 +549,21 @@ impl<K: Ord, V> AVLTree<K, V> {
         self.right_rotate(node.right());
         self.left_rotate(node);
 
-        if bf == 0 {
-            right_node.set_bf(0);
-            rl_node.set_bf(0);
-            node.set_bf(0);
-        } else if bf == 1 {
-            right_node.set_bf(0);
-            rl_node.set_bf(0);
-            node.set_bf(-1);
-        } else if bf == -1 {
-            right_node.set_bf(1);
-            rl_node.set_bf(0);
-            node.set_bf(0);
-        } else {
-            panic!("un reached");
-        }
+        // if bf == 0 {
+        //     right_node.set_bf(0);
+        //     rl_node.set_bf(0);
+        //     node.set_bf(0);
+        // } else if bf == 1 {
+        //     right_node.set_bf(0);
+        //     rl_node.set_bf(0);
+        //     node.set_bf(-1);
+        // } else if bf == -1 {
+        //     right_node.set_bf(1);
+        //     rl_node.set_bf(0);
+        //     node.set_bf(0);
+        // } else {
+        //     panic!("un reached");
+        // }
     }
 }
 
