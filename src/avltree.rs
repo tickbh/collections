@@ -740,7 +740,7 @@ impl<K: Ord, V> AVLTree<K, V> {
                         self.rl_rotate(parent);
                     }
                 } else {
-                    if node.bf() == 1 {
+                    if node.bf() == -1 {
                         self.right_rotate(parent);
                     } else {
                         self.lr_rotate(parent);
@@ -764,15 +764,23 @@ impl<K: Ord, V> AVLTree<K, V> {
             fix_parent = replace.parent();
             is_left = replace.is_left_child();
             if node == self.root  {
+                replace.set_left(self.root.left());
+                replace.set_right(self.root.right());
+                self.root.left().set_parent(replace);
+                self.root.right().set_parent(replace);
                 self.root = replace;
             } else {
                 if node.is_left_child() {
                     node.parent().set_left(replace);
+                    replace.set_right(node.right());
+                    node.right().set_parent(replace);
                 } else {
                     node.parent().set_right(replace);
+                    replace.set_left(node.left());
+                    node.left().set_parent(replace);
                 }
-                replace.set_bf(node.bf());
             }
+            replace.set_bf(node.bf());
             // if min_parent != node {
             //     min_parent.set_left(NodePtr::null());
             //     min_parent.add_bf(-1);
@@ -793,11 +801,11 @@ impl<K: Ord, V> AVLTree<K, V> {
         } else {
             is_left = node.is_left_child();
             fix_parent = node.parent();
-            if is_left {
-                fix_parent.set_left(NodePtr::null());
-            } else {
-                fix_parent.set_right(NodePtr::null());
-            }
+        }
+        if is_left {
+            fix_parent.set_left(NodePtr::null());
+        } else {
+            fix_parent.set_right(NodePtr::null());
         }
 
         while !fix_parent.is_null() {
@@ -989,7 +997,6 @@ impl<K: Ord, V> AVLTree<K, V> {
             _marker: marker::PhantomData,
         }
     }
-
     
     /// Return the key and mut value iter
     #[inline]
