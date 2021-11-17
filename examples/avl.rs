@@ -55,11 +55,78 @@ fn test4() {
     avl.print_tree();
 }
 
+fn test_lots_of_insertions() {
+    let mut m = AVLTree::new();
+
+    // Try this a few times to make sure we never screw up the hashmap's
+    // internal state.
+    for _ in 0..10 {
+        assert!(m.is_empty());
+
+        for i in 1..101 {
+            m.insert(i, i);
+
+            for j in 1..i + 1 {
+                let r = m.get(&j);
+                assert_eq!(r, Some(&j));
+            }
+
+            for j in i + 1..101 {
+                let r = m.get(&j);
+                assert_eq!(r, None);
+            }
+        }
+
+        for i in 101..201 {
+            assert!(!m.contains_key(&i));
+        }
+
+        // remove forwards
+        for i in 1..101 {
+            if i == 5 {
+                println!("ok");
+            }
+            assert!(m.remove(&i) == Some(i));
+            println!("i============{}",i);
+
+            for j in 1..i + 1 {
+                assert!(!m.contains_key(&j));
+            }
+
+            for j in i + 1..101 {
+                assert!(m.contains_key(&j));
+            }
+
+        }
+
+        for i in 1..101 {
+            assert!(!m.contains_key(&i));
+        }
+
+        for i in 1..101 {
+            m.insert(i, i);
+        }
+
+        // remove backwards
+        for i in (1..101).rev() {
+            assert!(m.remove(&i).is_some());
+
+            for j in i..101 {
+                assert!(!m.contains_key(&j));
+            }
+
+            for j in 1..i {
+                assert!(m.contains_key(&j));
+            }
+        }
+    }
+}
 fn main() {
     // test1();
     // test2();
-    test3();
+    // test3();
     // test4();
+    test_lots_of_insertions();
     // let mut avl = AVLTree::new();
     // print!("ok");
     // avl.insert(1, 2);
@@ -71,4 +138,17 @@ fn main() {
     // avl.print_tree();
 
     // println!("avl ==={:?}", avl);
+
+    // let mut m = AVLTree::new();
+    // assert_eq!(m.len(), 0);
+    // m.insert(1, 2);
+    // assert_eq!(m.len(), 1);
+    // m.insert(2, 4);
+    // assert_eq!(m.len(), 2);
+    // let m2 = m.clone();
+    // m.clear();
+    // assert_eq!(*m2.get(&1).unwrap(), 2);
+    // assert_eq!(*m2.get(&2).unwrap(), 4);
+    // assert_eq!(m2.len(), 2);
+
 }

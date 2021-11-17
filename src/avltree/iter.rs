@@ -6,8 +6,9 @@ use super::avl::{AVLTree};
 use super::node::{NodePtr};
 use std::cmp::Ord;
 use std::fmt::{self, Debug};
-use std::iter::{IntoIterator};
+use std::iter::{FromIterator, IntoIterator};
 use std::marker;
+use std::ops::Index;
 
 /// Convert AVLTree to iter, move out the tree.
 pub struct IntoIter<K: Ord, V> {
@@ -413,4 +414,59 @@ impl<K: Ord, V> AVLTree<K, V> {
         }
     }
 
+}
+
+
+impl<K: Ord, V> FromIterator<(K, V)> for AVLTree<K, V> {
+    fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> AVLTree<K, V> {
+        let mut tree = AVLTree::new();
+        tree.extend(iter);
+        tree
+    }
+}
+
+/// AVLTree into iter
+impl<K: Ord, V> Extend<(K, V)> for AVLTree<K, V> {
+    fn extend<T: IntoIterator<Item = (K, V)>>(&mut self, iter: T) {
+        let iter = iter.into_iter();
+        for (k, v) in iter {
+            self.insert(k, v);
+        }
+    }
+}
+
+impl<'a, K, V> Index<&'a K> for AVLTree<K, V>
+where
+    K: Ord,
+{
+    type Output = V;
+
+    #[inline]
+    fn index(&self, index: &K) -> &V {
+        self.get(index).expect("no entry found for key")
+    }
+}
+
+
+/// all key be same, but it has multi key, if has multi key, it perhaps no correct
+impl<K, V> PartialEq for AVLTree<K, V>
+where
+    K: Eq + Ord,
+    V: PartialEq,
+{
+    fn eq(&self, other: &AVLTree<K, V>) -> bool {
+        if self.len() != other.len() {
+            return false;
+        }
+
+        self.iter()
+            .all(|(key, value)| other.get(key).map_or(false, |v| *value == *v))
+    }
+}
+
+impl<K, V> Eq for AVLTree<K, V>
+where
+    K: Eq + Ord,
+    V: Eq,
+{
 }

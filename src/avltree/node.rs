@@ -41,6 +41,25 @@ impl<K: Ord, V> Clone for NodePtr<K, V> {
     }
 }
 
+
+impl<K: Ord + Clone, V: Clone> NodePtr<K, V> {
+    pub fn deep_clone(&self) -> NodePtr<K, V> {
+        unsafe {
+            let mut node = NodePtr::new((*self.0).key.clone(), (*self.0).value.clone());
+            node.set_bf(self.bf());
+            if !self.left().is_null() {
+                node.set_left(self.left().deep_clone());
+                node.left().set_parent(node);
+            }
+            if !self.right().is_null() {
+                node.set_right(self.right().deep_clone());
+                node.right().set_parent(node);
+            }
+            node
+        }
+    }
+}
+
 impl<K: Ord, V> Copy for NodePtr<K, V> {}
 
 impl<K: Ord, V> Ord for NodePtr<K, V> {
@@ -62,6 +81,7 @@ impl<K: Ord, V> PartialEq for NodePtr<K, V> {
 }
 
 impl<K: Ord, V> Eq for NodePtr<K, V> {}
+
 
 impl<K: Ord, V> NodePtr<K, V> {
     pub fn new(k: K, v: V) -> NodePtr<K, V> {
@@ -163,19 +183,19 @@ impl<K: Ord, V> NodePtr<K, V> {
     }
 
     #[inline]
-    pub fn set_left(&mut self, left: NodePtr<K, V>) {
+    pub fn set_left(&mut self, mut left: NodePtr<K, V>) {
         if self.is_null() {
             return;
         }
-        unsafe { (*self.0).left = left }
+        unsafe { (*self.0).left = left;  }
     }
 
     #[inline]
-    pub fn set_right(&mut self, right: NodePtr<K, V>) {
+    pub fn set_right(&mut self, mut right: NodePtr<K, V>) {
         if self.is_null() {
             return;
         }
-        unsafe { (*self.0).right = right }
+        unsafe { (*self.0).right = right;  }
     }
 
     #[inline]

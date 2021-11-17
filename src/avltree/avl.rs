@@ -1,6 +1,7 @@
 use std::cmp::Ord;
 use std::cmp::Ordering;
 use std::fmt::{self, Debug};
+use std::mem;
 
 use super::node::{NodePtr};
 
@@ -16,6 +17,16 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_map().entries(self.iter()).finish()
+    }
+}
+
+/// If key and value are both impl Clone, we can call clone to get a copy.
+impl<K: Ord + Clone, V: Clone> Clone for AVLTree<K, V> {
+    fn clone(&self) -> AVLTree<K, V> {
+        let mut new = AVLTree::new();
+        new.root = self.root.deep_clone();
+        new.len = self.len;
+        new
     }
 }
 
@@ -49,6 +60,15 @@ impl<K: Ord + Debug, V: Debug> AVLTree<K, V> {
         println!("This tree size = {:?}, begin:-------------", self.len());
         self.tree_print(self.root, 0);
         println!("end--------------------------");
+    }
+}
+
+
+// Drop all owned pointers if the tree is dropped
+impl<K: Ord, V> Drop for AVLTree<K, V> {
+    #[inline]
+    fn drop(&mut self) {
+        self.clear();
     }
 }
 
@@ -96,6 +116,34 @@ impl<K: Ord, V> AVLTree<K, V> {
         NodePtr::null()
     }
 
+    
+    /// replace value if key exist, if not exist insert it.
+    /// # Examples
+    /// ```
+    /// use datastruct::AVLTree;
+    /// let mut m = AVLTree::new();
+    /// assert_eq!(m.len(), 0);
+    /// m.insert(2, 4);
+    /// assert_eq!(m.len(), 1);
+    /// assert_eq!(m.replace_or_insert(2, 6).unwrap(), 4);
+    /// assert_eq!(m.len(), 1);
+    /// assert_eq!(*m.get(&2).unwrap(), 6);
+    /// ```
+    #[inline]
+    pub fn replace_or_insert(&mut self, k: K, mut v: V) -> Option<V> {
+        let node = self.find_node(&k);
+        if node.is_null() {
+            self.insert(k, v);
+            return None;
+        }
+
+        unsafe {
+            mem::swap(&mut v, &mut (*node.0).value);
+        }
+
+        Some(v)
+    }
+    
     #[inline]
     pub fn insert(&mut self, k: K, v: V) {
         self.len += 1;
@@ -197,31 +245,40 @@ impl<K: Ord, V> AVLTree<K, V> {
                 }
             }
             replace.set_bf(node.bf());
-            // if min_parent != node {
-            //     min_parent.set_left(NodePtr::null());
-            //     min_parent.add_bf(-1);
-            // } else {
-            //     min_parent.add_bf(1);
-            // }
             replace.set_parent(node.parent());
+            if is_left {
+                fix_parent.set_left(NodePtr::null());
+            } else {
+                fix_parent.set_right(NodePtr::null());
+            }
         } else if !node.left().is_null() {
             node.left().set_parent(node.parent());
-            node.parent().set_left(node.left());
-            fix_parent = node.parent();
+            if node.is_left_child() {
+                node.parent().set_left(node.left());
+            } else {
+                node.parent().set_right(node.left());
+            }
+            fix_parent = node.left();
+            fix_parent.set_bf(node.bf());
             is_left = true;
         } else if !node.right().is_null() {
             node.right().set_parent(node.parent());
-            node.parent().set_right(node.right());
-            fix_parent = node.parent();
+            if node.is_left_child() {
+                node.parent().set_left(node.right());
+            } else {
+                node.parent().set_right(node.right());
+            }
+            fix_parent = node.right();
+            fix_parent.set_bf(node.bf());
             is_left = false;
         } else {
             is_left = node.is_left_child();
             fix_parent = node.parent();
-        }
-        if is_left {
-            fix_parent.set_left(NodePtr::null());
-        } else {
-            fix_parent.set_right(NodePtr::null());
+            if is_left {
+                fix_parent.set_left(NodePtr::null());
+            } else {
+                fix_parent.set_right(NodePtr::null());
+            }
         }
 
         while !fix_parent.is_null() {
@@ -371,9 +428,8 @@ impl<K: Ord, V> AVLTree<K, V> {
 
     #[inline]
     pub fn clear(&mut self) {
-        let root = self.root;
+        self.clear_recurse(self.root);
         self.root = NodePtr::null();
-        self.clear_recurse(root);
     }
 
     #[inline]
@@ -515,3 +571,4 @@ impl<K: Ord, V> AVLTree<K, V> {
         }
     }
 }
+
