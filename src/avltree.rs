@@ -714,7 +714,7 @@ impl<K: Ord, V> AVLTree<K, V> {
             }
         };
 
-        self.fixup_node(tmp, true);
+        self.fixup_node(node, true);
     }
 
     fn fixup_node(&mut self,mut node: NodePtr<K, V>, is_add: bool) {
@@ -746,6 +746,7 @@ impl<K: Ord, V> AVLTree<K, V> {
                         self.lr_rotate(parent);
                     }
                 }
+                break;
             }
         }
     }
@@ -793,9 +794,9 @@ impl<K: Ord, V> AVLTree<K, V> {
             is_left = node.is_left_child();
             fix_parent = node.parent();
             if is_left {
-                node.set_left(NodePtr::null());
+                fix_parent.set_left(NodePtr::null());
             } else {
-                node.set_right(NodePtr::null());
+                fix_parent.set_right(NodePtr::null());
             }
         }
 
@@ -807,9 +808,9 @@ impl<K: Ord, V> AVLTree<K, V> {
             }
 
             if fix_parent.bf() == 0 {
-                break;
-            } else if fix_parent.bf() == -1 || fix_parent.bf() == 1 {
                 is_left = fix_parent.is_left_child();
+            } else if fix_parent.bf() == -1 || fix_parent.bf() == 1 {
+                break;
             } else {
                 if fix_parent.bf() == 2 {
                     self.left_rotate(fix_parent);
