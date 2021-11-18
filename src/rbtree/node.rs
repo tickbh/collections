@@ -1,63 +1,57 @@
+// Copyright 2017-2018 By tickdream125@hotmail.com.
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
 use std::cmp::Ord;
 use std::cmp::Ordering;
 use std::fmt::{self, Debug};
 use std::ptr;
 
 
-/*****************AVLTreeNode***************************/
-pub struct AVLTreeNode<K: Ord, V> {
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum Color {
+    Red,
+    Black,
+}
+
+/*****************RBTreeNode***************************/
+pub struct RBTreeNode<K: Ord, V> {
+    pub color: Color,
     pub left: NodePtr<K, V>,
     pub right: NodePtr<K, V>,
     pub parent: NodePtr<K, V>,
     pub key: K,
     pub value: V,
-    pub height: i32,
 }
 
-impl<K, V> Debug for AVLTreeNode<K, V>
-where
-    K: Ord + Debug,
-    V: Debug,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "k:{:?} v:{:?}, h:{:?}", self.key, self.value, self.height)
-    }
-}
-
-impl<K: Ord, V> AVLTreeNode<K, V> {
+impl<K: Ord, V> RBTreeNode<K, V> {
     #[inline]
     pub fn pair(self) -> (K, V) {
         (self.key, self.value)
     }
 }
 
+impl<K, V> Debug for RBTreeNode<K, V>
+where
+    K: Ord + Debug,
+    V: Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "k:{:?} v:{:?} c:{:?}", self.key, self.value, self.color)
+    }
+}
+
 /*****************NodePtr***************************/
 #[derive(Debug)]
-pub struct NodePtr<K: Ord, V>(pub *mut AVLTreeNode<K, V>);
+pub struct NodePtr<K: Ord, V>(pub *mut RBTreeNode<K, V>);
 
 impl<K: Ord, V> Clone for NodePtr<K, V> {
     fn clone(&self) -> NodePtr<K, V> {
         NodePtr(self.0)
-    }
-}
-
-
-impl<K: Ord + Clone, V: Clone> NodePtr<K, V> {
-    pub fn deep_clone(&self) -> NodePtr<K, V> {
-        unsafe {
-            let mut node = NodePtr::new((*self.0).key.clone(), (*self.0).value.clone());
-            
-            (*self.0).height = node.height();
-            if !self.left().is_null() {
-                node.set_left(self.left().deep_clone());
-                node.left().set_parent(node);
-            }
-            if !self.right().is_null() {
-                node.set_right(self.right().deep_clone());
-                node.right().set_parent(node);
-            }
-            node
-        }
     }
 }
 
@@ -83,32 +77,61 @@ impl<K: Ord, V> PartialEq for NodePtr<K, V> {
 
 impl<K: Ord, V> Eq for NodePtr<K, V> {}
 
-
 impl<K: Ord, V> NodePtr<K, V> {
     pub fn new(k: K, v: V) -> NodePtr<K, V> {
-        let node = AVLTreeNode {
+        let node = RBTreeNode {
+            color: Color::Black,
             left: NodePtr::null(),
             right: NodePtr::null(),
             parent: NodePtr::null(),
             key: k,
             value: v,
-            height: 1,
         };
         NodePtr(Box::into_raw(Box::new(node)))
     }
 
-    pub fn get_node(&self) -> &AVLTreeNode<K, V> {
-        unsafe { &*(self).0 }
-    }
-    
-    pub fn get_mut_node(&self) -> &AVLTreeNode<K, V> {
-        unsafe { &mut *(self).0 }
+    #[inline]
+    pub fn set_color(&mut self, color: Color) {
+        if self.is_null() {
+            return;
+        }
+        unsafe {
+            (*self.0).color = color;
+        }
     }
 
-    pub fn from_raw(self) -> Box<AVLTreeNode<K, V>> {
-        unsafe {
-            Box::from_raw( self.0  )
+    #[inline]
+    pub fn set_red_color(&mut self) {
+        self.set_color(Color::Red);
+    }
+
+    #[inline]
+    pub fn set_black_color(&mut self) {
+        self.set_color(Color::Black);
+    }
+
+    #[inline]
+    pub fn get_color(&self) -> Color {
+        if self.is_null() {
+            return Color::Black;
         }
+        unsafe { (*self.0).color }
+    }
+
+    #[inline]
+    pub fn is_red_color(&self) -> bool {
+        if self.is_null() {
+            return false;
+        }
+        unsafe { (*self.0).color == Color::Red }
+    }
+
+    #[inline]
+    pub fn is_black_color(&self) -> bool {
+        if self.is_null() {
+            return true;
+        }
+        unsafe { (*self.0).color == Color::Black }
     }
 
     #[inline]
@@ -184,29 +207,19 @@ impl<K: Ord, V> NodePtr<K, V> {
     }
 
     #[inline]
-    pub fn set_left(&mut self, mut left: NodePtr<K, V>) {
+    pub fn set_left(&mut self, left: NodePtr<K, V>) {
         if self.is_null() {
             return;
         }
-        unsafe { 
-            (*self.0).left = left; 
-            if !left.is_null() {
-                (*left.0).parent = self.clone(); 
-            }
-        }
+        unsafe { (*self.0).left = left }
     }
 
     #[inline]
-    pub fn set_right(&mut self, mut right: NodePtr<K, V>) {
+    pub fn set_right(&mut self, right: NodePtr<K, V>) {
         if self.is_null() {
             return;
         }
-        unsafe { 
-            (*self.0).right = right;
-            if !right.is_null() {
-                (*right.0).parent = self.clone();
-            }
-        }
+        unsafe { (*self.0).right = right }
     }
 
     #[inline]
@@ -233,26 +246,6 @@ impl<K: Ord, V> NodePtr<K, V> {
         unsafe { (*self.0).right.clone() }
     }
 
-    pub fn height(&self) -> i32 {
-        if self.is_null() {
-            return 0;
-        }
-        unsafe { (*self.0).height }
-    }
-
-    pub fn set_height(&self, height: i32) {
-        if self.is_null() {
-            return;
-        }
-        unsafe { (*self.0).height = height }
-    }
-
-    pub fn update_height(&mut self) {
-        unsafe {
-            (*self.0).height = 1 + std::cmp::max(self.left().height(), self.right().height());    
-        }
-    }
-
     #[inline]
     pub fn null() -> NodePtr<K, V> {
         NodePtr(ptr::null_mut())
@@ -262,30 +255,19 @@ impl<K: Ord, V> NodePtr<K, V> {
     pub fn is_null(&self) -> bool {
         self.0.is_null()
     }
+}
 
-    pub fn bf(&self) -> i8 {
-        let (left, right) = (self.left().height(), self.right().height());
-        (right - left) as i8
+impl<K: Ord + Clone, V: Clone> NodePtr<K, V> {
+    pub unsafe fn deep_clone(&self) -> NodePtr<K, V> {
+        let mut node = NodePtr::new((*self.0).key.clone(), (*self.0).value.clone());
+        if !self.left().is_null() {
+            node.set_left(self.left().deep_clone());
+            node.left().set_parent(node);
+        }
+        if !self.right().is_null() {
+            node.set_right(self.right().deep_clone());
+            node.right().set_parent(node);
+        }
+        node
     }
-
-    // #[inline]
-    // pub fn bf_mut(&self) -> &mut i8 {
-    //     let (left, right) = (self.left().height(), self.right().height());
-    //     return left - right;
-    // }
-
-    // #[inline]
-    // pub fn set_bf(&self, bf: i8) {
-    //     unsafe {  (*self.0).height   = bf; }
-    // }
-    
-    // #[inline]
-    // pub fn add_bf(&self, bf: i8) -> i8 {
-    //     unsafe {  (*self.0).height += bf; (*self.0).height }
-    // }
-
-    // #[inline]
-    // pub fn bf(&self) -> i8 {
-    //     unsafe { (*self.0).height }
-    // }
 }

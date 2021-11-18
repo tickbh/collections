@@ -8,6 +8,7 @@ use super::node::{NodePtr};
 pub struct AVLTree<K: Ord, V> {
     pub root: NodePtr<K, V>,
     pub len: usize,
+    pub repeat: bool,
 }
 
 impl<K, V> Debug for AVLTree<K, V>
@@ -78,6 +79,15 @@ impl<K: Ord, V> AVLTree<K, V> {
         AVLTree {
             root: NodePtr::null(),
             len: 0,
+            repeat: false,
+        }
+    }
+
+    pub fn new_repeat() -> AVLTree<K, V> {
+        AVLTree {
+            root: NodePtr::null(),
+            len: 0,
+            repeat: true,
         }
     }
 
@@ -92,7 +102,6 @@ impl<K: Ord, V> AVLTree<K, V> {
     pub fn is_empty(&self) -> bool {
         self.root.is_null()
     }
-
     
     #[inline]
     fn find_node(&self, k: &K) -> NodePtr<K, V> {
@@ -145,8 +154,7 @@ impl<K: Ord, V> AVLTree<K, V> {
     }
     
     #[inline]
-    pub fn insert(&mut self, k: K, v: V) {
-        self.len += 1;
+    pub fn insert(&mut self, k: K, v: V) -> bool {
         let mut node = NodePtr::new(k, v);
         let mut parent = NodePtr::null();
         let mut tmp = self.root;
@@ -157,16 +165,24 @@ impl<K: Ord, V> AVLTree<K, V> {
                 Ordering::Less => {
                     tmp = tmp.left();
                 }
-                _ => {
+                Ordering::Greater => {
+                    tmp = tmp.right();
+                }
+                Ordering::Equal => {
+                    if !self.repeat {
+                        return false;
+                    }
                     tmp = tmp.right();
                 }
             };
         }
+        
+        self.len += 1;
         node.set_parent(parent);
 
         if parent.is_null() {
             self.root = node;
-            return;
+            return true;
         }
 
         match node.cmp(&&mut parent) {
@@ -178,12 +194,12 @@ impl<K: Ord, V> AVLTree<K, V> {
             }
         };
 
-        self.fixup_node(node, true);
+        self.fixup_node(node);
+        true
     }
 
-    fn fixup_node(&mut self,mut node: NodePtr<K, V>, is_add: bool) {
+    fn fixup_node(&mut self,mut node: NodePtr<K, V>) {
         let mut parent = node.parent();
-        let step = if is_add {1} else {-1};
         while !parent.is_null() {
             parent.update_height();
 
@@ -217,14 +233,13 @@ impl<K: Ord, V> AVLTree<K, V> {
         self.len -= 1;
         
         let mut fix_parent;
-        let mut is_left;
 
         let is_root = node == self.root;
 
         if !node.left().is_null() && !node.right().is_null() {
             let mut replace = node.right().min_node();
             fix_parent = replace.parent();
-            is_left = replace.is_left_child();
+            let is_left = replace.is_left_child();
             if is_root  {
                 replace.set_left(self.root.left());
                 replace.set_right(self.root.right());
@@ -254,7 +269,6 @@ impl<K: Ord, V> AVLTree<K, V> {
             }
             fix_parent = node.left();
             fix_parent.set_height(node.height());
-            is_left = true;
             if is_root {
                 self.root = fix_parent;
             }
@@ -267,14 +281,12 @@ impl<K: Ord, V> AVLTree<K, V> {
             }
             fix_parent = node.right();
             fix_parent.set_height(node.height());
-            is_left = false;
             if is_root {
                 self.root = fix_parent;
             }
         } else {
-            is_left = node.is_left_child();
             fix_parent = node.parent();
-            if is_left {
+            if node.is_left_child() {
                 fix_parent.set_left(NodePtr::null());
             } else {
                 fix_parent.set_right(NodePtr::null());
@@ -288,7 +300,6 @@ impl<K: Ord, V> AVLTree<K, V> {
             fix_parent.update_height();
 
             if fix_parent.bf() == 0 {
-                is_left = fix_parent.is_left_child();
             } else if fix_parent.bf() == -1 || fix_parent.bf() == 1 {
                 break;
             } else {
@@ -517,53 +528,16 @@ impl<K: Ord, V> AVLTree<K, V> {
     
     #[inline]
     fn lr_rotate(&mut self, node: NodePtr<K, V>) {
-        let left_node = node.left();
-        let lr_node = left_node.right();
-        let bf = lr_node.bf();
         self.left_rotate(node.left());
         self.right_rotate(node);
 
-        // if bf == 0 {
-        //     left_node.set_bf(0);
-        //     lr_node.set_bf(0);
-        //     node.set_bf(0);
-        // } else if bf == 1 {
-        //     left_node.set_bf(0);
-        //     lr_node.set_bf(-1);
-        //     node.set_bf(0);
-        // } else if bf == -1 {
-        //     left_node.set_bf(0);
-        //     lr_node.set_bf(0);
-        //     node.set_bf(1);
-        // } else {
-        //     panic!("un reached");
-        // }
     }
 
     
     #[inline]
     fn rl_rotate(&mut self, node: NodePtr<K, V>) {
-        let right_node = node.right();
-        let rl_node = right_node.left();
-        let bf = rl_node.bf();
         self.right_rotate(node.right());
         self.left_rotate(node);
-
-        // if bf == 0 {
-        //     right_node.set_bf(0);
-        //     rl_node.set_bf(0);
-        //     node.set_bf(0);
-        // } else if bf == 1 {
-        //     right_node.set_bf(0);
-        //     rl_node.set_bf(0);
-        //     node.set_bf(-1);
-        // } else if bf == -1 {
-        //     right_node.set_bf(1);
-        //     rl_node.set_bf(0);
-        //     node.set_bf(0);
-        // } else {
-        //     panic!("un reached");
-        // }
     }
 }
 

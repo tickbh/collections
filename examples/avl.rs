@@ -130,15 +130,15 @@ fn main() {
     // test2();
     // test3();
     // test4();
-    test_lots_of_insertions();
+    // test_lots_of_insertions();
     print!("ok");
 
     
-    // let mut avl = AVLTree::new();
-    // avl.insert(1, 1);
-    // avl.insert(2, 2);
-    // avl.insert(4, 4);
-    // avl.print_tree();
+    let mut avl = AVLTree::new_repeat();
+    avl.insert(1, 1);
+    avl.insert(1, 2);
+    avl.remove(&1);
+    avl.print_tree();
     
     // avl.insert(1, 2);
     // avl.insert(3, 1);

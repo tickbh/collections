@@ -1,11 +1,19 @@
+// Copyright 2017-2018 By tickdream125@hotmail.com.
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
 
 #[cfg(test)]
 mod tests {
-    use super::super::avl::{AVLTree};
+    use super::super::rb::{RBTree};
 
     #[test]
     fn test_insert() {
-        let mut m = AVLTree::new();
+        let mut m = RBTree::new();
         assert_eq!(m.len(), 0);
         m.insert(1, 2);
         assert_eq!(m.len(), 1);
@@ -16,7 +24,7 @@ mod tests {
         assert_eq!(*m.get(&1).unwrap(), 2);
         assert_eq!(*m.get(&2).unwrap(), 4);
 
-        let mut m = AVLTree::new_repeat();
+        let mut m = RBTree::new_repeat();
         assert_eq!(m.len(), 0);
         m.insert(1, 2);
         assert_eq!(m.len(), 1);
@@ -27,7 +35,7 @@ mod tests {
 
     #[test]
     fn test_replace() {
-        let mut m = AVLTree::new();
+        let mut m = RBTree::new();
         assert_eq!(m.len(), 0);
         m.insert(2, 4);
         assert_eq!(m.len(), 1);
@@ -38,7 +46,7 @@ mod tests {
 
     #[test]
     fn test_clone() {
-        let mut m = AVLTree::new();
+        let mut m = RBTree::new();
         assert_eq!(m.len(), 0);
         m.insert(1, 2);
         assert_eq!(m.len(), 1);
@@ -53,13 +61,13 @@ mod tests {
 
     #[test]
     fn test_empty_remove() {
-        let mut m: AVLTree<isize, bool> = AVLTree::new();
+        let mut m: RBTree<isize, bool> = RBTree::new();
         assert_eq!(m.remove(&0), None);
     }
 
     #[test]
     fn test_empty_iter() {
-        let mut m: AVLTree<isize, bool> = AVLTree::new();
+        let mut m: RBTree<isize, bool> = RBTree::new();
         assert_eq!(m.iter().next(), None);
         assert_eq!(m.iter_mut().next(), None);
         assert_eq!(m.len(), 0);
@@ -69,7 +77,7 @@ mod tests {
 
     #[test]
     fn test_lots_of_insertions() {
-        let mut m = AVLTree::new();
+        let mut m = RBTree::new();
 
         // Try this a few times to make sure we never screw up the hashmap's
         // internal state.
@@ -132,7 +140,7 @@ mod tests {
 
     #[test]
     fn test_find_mut() {
-        let mut m = AVLTree::new();
+        let mut m = RBTree::new();
         m.insert(1, 12);
         m.insert(2, 8);
         m.insert(5, 14);
@@ -146,7 +154,7 @@ mod tests {
 
     #[test]
     fn test_remove() {
-        let mut m = AVLTree::new();
+        let mut m = RBTree::new();
         m.insert(1, 2);
         assert_eq!(*m.get(&1).unwrap(), 2);
         m.insert(5, 3);
@@ -163,7 +171,7 @@ mod tests {
 
     #[test]
     fn test_is_empty() {
-        let mut m = AVLTree::new();
+        let mut m = RBTree::new();
         m.insert(1, 2);
         assert!(!m.is_empty());
         assert!(m.remove(&1).is_some());
@@ -172,7 +180,7 @@ mod tests {
 
     #[test]
     fn test_pop() {
-        let mut m = AVLTree::new();
+        let mut m = RBTree::new();
         m.insert(2, 4);
         m.insert(1, 2);
         m.insert(3, 6);
@@ -187,7 +195,7 @@ mod tests {
 
     #[test]
     fn test_iterate() {
-        let mut m = AVLTree::new();
+        let mut m = RBTree::new();
         for i in 0..32 {
             m.insert(i, i * 2);
         }
@@ -205,7 +213,7 @@ mod tests {
     #[test]
     fn test_keys() {
         let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
-        let map: AVLTree<_, _> = vec.into_iter().collect();
+        let map: RBTree<_, _> = vec.into_iter().collect();
         let keys: Vec<_> = map.keys().cloned().collect();
         assert_eq!(keys.len(), 3);
         assert!(keys.contains(&1));
@@ -216,7 +224,7 @@ mod tests {
     #[test]
     fn test_values() {
         let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
-        let map: AVLTree<_, _> = vec.into_iter().collect();
+        let map: RBTree<_, _> = vec.into_iter().collect();
         let values: Vec<_> = map.values().cloned().collect();
         assert_eq!(values.len(), 3);
         assert!(values.contains(&'a'));
@@ -227,7 +235,7 @@ mod tests {
     #[test]
     fn test_values_mut() {
         let vec = vec![(1, 1), (2, 2), (3, 3)];
-        let mut map: AVLTree<_, _> = vec.into_iter().collect();
+        let mut map: RBTree<_, _> = vec.into_iter().collect();
         for value in map.values_mut() {
             *value = (*value) * 2
         }
@@ -240,7 +248,7 @@ mod tests {
 
     #[test]
     fn test_find() {
-        let mut m = AVLTree::new();
+        let mut m = RBTree::new();
         assert!(m.get(&1).is_none());
         m.insert(1, 2);
         match m.get(&1) {
@@ -251,12 +259,12 @@ mod tests {
 
     #[test]
     fn test_eq() {
-        let mut m1 = AVLTree::new();
+        let mut m1 = RBTree::new();
         m1.insert(1, 2);
         m1.insert(2, 3);
         m1.insert(3, 4);
 
-        let mut m2 = AVLTree::new();
+        let mut m2 = RBTree::new();
         m2.insert(1, 2);
         m2.insert(2, 3);
 
@@ -269,8 +277,8 @@ mod tests {
 
     #[test]
     fn test_show() {
-        let mut map = AVLTree::new();
-        let empty: AVLTree<i32, i32> = AVLTree::new();
+        let mut map = RBTree::new();
+        let empty: RBTree<i32, i32> = RBTree::new();
 
         map.insert(1, 2);
         map.insert(3, 4);
@@ -285,7 +293,7 @@ mod tests {
     fn test_from_iter() {
         let xs = [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6)];
 
-        let map: AVLTree<_, _> = xs.iter().cloned().collect();
+        let map: RBTree<_, _> = xs.iter().cloned().collect();
 
         for &(k, v) in &xs {
             assert_eq!(map.get(&k), Some(&v));
@@ -296,7 +304,7 @@ mod tests {
     fn test_size_hint() {
         let xs = [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6)];
 
-        let map: AVLTree<_, _> = xs.iter().cloned().collect();
+        let map: RBTree<_, _> = xs.iter().cloned().collect();
 
         let mut iter = map.iter();
 
@@ -309,7 +317,7 @@ mod tests {
     fn test_iter_len() {
         let xs = [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6)];
 
-        let map: AVLTree<_, _> = xs.iter().cloned().collect();
+        let map: RBTree<_, _> = xs.iter().cloned().collect();
 
         let mut iter = map.iter();
 
@@ -322,7 +330,7 @@ mod tests {
     fn test_mut_size_hint() {
         let xs = [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6)];
 
-        let mut map: AVLTree<_, _> = xs.iter().cloned().collect();
+        let mut map: RBTree<_, _> = xs.iter().cloned().collect();
 
         let mut iter = map.iter_mut();
 
@@ -335,7 +343,7 @@ mod tests {
     fn test_iter_mut_len() {
         let xs = [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6)];
 
-        let mut map: AVLTree<_, _> = xs.iter().cloned().collect();
+        let mut map: RBTree<_, _> = xs.iter().cloned().collect();
 
         let mut iter = map.iter_mut();
 
@@ -346,7 +354,7 @@ mod tests {
 
     #[test]
     fn test_index() {
-        let mut map = AVLTree::new();
+        let mut map = RBTree::new();
 
         map.insert(1, 2);
         map.insert(2, 1);
@@ -358,7 +366,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_index_nonexistent() {
-        let mut map = AVLTree::new();
+        let mut map = RBTree::new();
 
         map.insert(1, 2);
         map.insert(2, 1);
@@ -369,9 +377,9 @@ mod tests {
 
     #[test]
     fn test_extend_iter() {
-        let mut a = AVLTree::new();
+        let mut a = RBTree::new();
         a.insert(1, "one");
-        let mut b = AVLTree::new();
+        let mut b = RBTree::new();
         b.insert(2, "two");
         b.insert(3, "three");
 
