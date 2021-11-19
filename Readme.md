@@ -1,7 +1,7 @@
 datastruct for rust
 =====================
 
-A Rust library for creating datastruct. 
+A Rust library for creating datastruct. now support AVLTree, RBTree
 
 ## Usage
 

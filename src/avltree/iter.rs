@@ -10,6 +10,68 @@ use std::iter::{FromIterator, IntoIterator};
 use std::marker;
 use std::ops::Index;
 
+impl<K, V> Debug for AVLTree<K, V>
+where
+    K: Ord + Debug,
+    V: Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_map().entries(self.iter()).finish()
+    }
+}
+
+/// If key and value are both impl Clone, we can call clone to get a copy.
+impl<K: Ord + Clone, V: Clone> Clone for AVLTree<K, V> {
+    fn clone(&self) -> AVLTree<K, V> {
+        let mut new = AVLTree::new();
+        new.root = self.root.deep_clone();
+        new.len = self.len;
+        new
+    }
+}
+
+/// This is a method to help us to get inner struct.
+impl<K: Ord + Debug, V: Debug> AVLTree<K, V> {
+    fn tree_print(&self, node: NodePtr<K, V>, direction: i32) {
+        if node.is_null() {
+            return;
+        }
+        if direction == 0 {
+            unsafe {
+                println!("'{:?}' is root node", (*node.0));
+            }
+        } else {
+            let direct = if direction == -1 { "left" } else { "right" };
+            println!(
+                "{:?} is {:?}'s {:?} child ", node.get_node(), 
+                node.parent().get_node(),
+                direct
+            );
+        }
+        self.tree_print(node.left(), -1);
+        self.tree_print(node.right(), 1);
+    }
+
+    pub fn print_tree(&self) {
+        if self.root.is_null() {
+            println!("This is a empty tree");
+            return;
+        }
+        println!("This tree size = {:?}, begin:-------------", self.len());
+        self.tree_print(self.root, 0);
+        println!("end--------------------------");
+    }
+}
+
+
+// Drop all owned pointers if the tree is dropped
+impl<K: Ord, V> Drop for AVLTree<K, V> {
+    #[inline]
+    fn drop(&mut self) {
+        self.clear();
+    }
+}
+
 /// Convert AVLTree to iter, move out the tree.
 pub struct IntoIter<K: Ord, V> {
     head: NodePtr<K, V>,
